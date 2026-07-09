@@ -19,7 +19,11 @@
 <script>
     const map = new maplibregl.Map({
         container: 'map',
-        style: 'https://maplibre.org', // Clean base layer
+        style: {
+            "version": 8,
+            "sources": {},
+            "layers": []
+            },      
         center: [26.5, -32.125], // Positioned default zoom window over Eastern Cape region
         zoom: 7
     });
@@ -37,17 +41,17 @@
 
         // Step 2: Define and group your 34 source layers for batch rendering
         const polygonLayers = [
-            'PublicOpenSpace', 'Farms_Parastatal', 'Farms_DWS', 'Farms_Municipal', 
-            'Farms_StateLandinTrust', 'Farms_DPWINational', 'Farms_DPWIProvincial', 
-            'Farms_DLRRD', 'DPWIAssetRegisterFarms', 'Farmportions', 'Parentfarms', 
-            'Erven_DHS', 'Erven_Prastatal', 'Erven_DPWINational', 'Erven_DPWIProvincial', 
-            'Erven_DLRRD', 'Erven_Municipality', 'DPWIAssetRegisterErven', 'Erven', 
-            'Holdings', 'Leaseareas', 'MineralRights', 'Servitudeareas', 
-            'RegistrationDivision', 'Towns', 'LocalMunicipalities',  'Generalplans', 
-            'DistrictMunicipalities', 'MetropolitanMunicipality', 'EasternCape', 
+            'Public Open Space', 'Farms_Parastatal', 'Farms_DWS', 'Farms_Municipal', 
+            'Farms_State Land in Trust', 'Farms_DPWI National', 'Farms_DPWI Provincial', 
+            'Farms_DLRRD', 'DPWI Asset Register Farms', 'Farm portions', 'Parent farms', 
+            'Erven_DHS', 'Erven_Prastatal', 'Erven_DPWI National', 'Erven_DPWI Provincial', 
+            'Erven_DLRRD', 'Erven_Municipality', 'DPWI Asset Register Erven', 'Erven', 
+            'Holdings', 'Lease areas', 'Mineral Rights', 'Servitude areas', 
+            'Registration Division', 'Towns', 'Local Municipalities',  'General plans', 
+            'District Municipalities', 'Metropolitan Municipality', 'Eastern Cape', 
         ];
 
-        const lineLayers = ['Streets', 'HV Lines 20140207', 'MV Lines', 'EstablishedBoundary'];
+        const lineLayers = ['Streets', 'HV Lines 20140207', 'MV Lines', 'Established Boundary'];
         const pointLayers = ['Beacon'];
 
         // Step 3: Draw out the Polygons dynamically (Cadastrals, Farms, Boundaries)
@@ -74,7 +78,7 @@
                 'source-layer': layerName,
                 'paint': {
                     'line-color': layerName.includes('Lines') ? '#e53935' : '#757575', // Electrical grids appear red, streets grey
-                    'line-width': layerName.includes('HVLines') ? 2.5 : 1.2
+                    'line-width': layerName.includes('HV Lines') ? 2.5 : 1.2
                 }
             });
         });
