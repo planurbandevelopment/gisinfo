@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Geoinfo</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <!-- Include MapLibre CSS and JS libraries -->
+    <script src="https://unpkg.com"></script>
+    <link href="https://unpkg.com" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        .maplibregl-popup { max-width: 400px; font: 12px/20px 'Helvetica Neue', Arial, sans-serif; }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+    // Initialize the base map with an open-source style
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: 'https://maplibre.org', // Basic base style
+        center: [32.125, -26.5], // Coordinates centered on EC
+        zoom: 7
+    });
+
+    map.on('load', () => {
+        // 1. Add your GitHub-hosted vector tiles as a data source
+        map.addSource('gisinfo', {
+            type: 'vector',
+            tiles: [
+                'https://github.io{z}/{x}/{y}.pbf'
+            ],
+            minzoom: 10,
+            maxzoom: 18
+        });
+
+        // 2. Render your 100MB polygon survey layers visually
+        map.addLayer({
+            'id': 'Erven',
+            'type': 'fill',
+            'source': 'gisinfo',
+            'source-layer': 'Erven', // Must match your original QGIS layer name
+            'paint': {
+                'fill-color': '#3f51b5',
+                'fill-opacity': 0.4,
+                'fill-outline-color': '#1a237e'
+            }
+        });
+
+        // 3. Setup interactive click events for attribute tables/popups
+        map.on('click', 'Erven', (e) => {
+            const properties = e.features[0].properties;
+            
+            // Build your interactive popup HTML using your QGIS attribute columns
+            // Replace 'Plot_ID' and 'Owner' with your actual column headings
+            let popupContent = `<h3>Property Details</h3><table border="1" style="border-collapse:collapse; width:100%;">`;
+            for (const [key, value] of Object.entries(properties)) {
+                popupContent += `<tr><td style="padding:5px;"><b>${key}</b></td><td style="padding:5px;">${value}</td></tr>`;
+            }
+            popupContent += `</table>`;
+
+            new maplibregl.Popup()
+                .setLngLat(e.lngLat)
+                .setHTML(popupContent)
+                .addTo(map);
+        });
+
+        // Change cursor to a pointer when hovering over properties
+        map.on('mouseenter', 'Erven', () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', 'Erven', () => { map.getCanvas().style.cursor = ''; });
+    });
+</script>
+
+</body>
+</html>
