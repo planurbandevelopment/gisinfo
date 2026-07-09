@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Geoinfo</title>
+    <title>Geoinfo Map</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <!-- Include MapLibre CSS and JS libraries -->
     <script src="https://unpkg.com"></script>
     <link href="https://unpkg.com" rel="stylesheet" />
     <style>
@@ -18,59 +17,109 @@
 <div id="map"></div>
 
 <script>
-    // Initialize the base map with an open-source style
     const map = new maplibregl.Map({
         container: 'map',
-        style: 'https://maplibre.org', // Basic base style
-        center: [32.125, -26.5], // Coordinates centered on EC
+        style: 'https://maplibre.org', // Clean base layer
+        center: [26.5, -32.125], // Positioned default zoom window over Eastern Cape region
         zoom: 7
     });
 
     map.on('load', () => {
-        // 1. Add your GitHub-hosted vector tiles as a data source
+        // Step 1: Hook the single compiled GitHub vector tile generation engine
         map.addSource('gisinfo', {
             type: 'vector',
             tiles: [
                 'https://github.io{z}/{x}/{y}.pbf'
             ],
-            minzoom: 10,
+            minzoom: 6,
             maxzoom: 18
         });
 
-        // 2. Render your 100MB polygon survey layers visually
-        map.addLayer({
-            'id': 'Erven',
-            'type': 'fill',
-            'source': 'gisinfo',
-            'source-layer': 'Erven', // Must match your original QGIS layer name
-            'paint': {
-                'fill-color': '#3f51b5',
-                'fill-opacity': 0.4,
-                'fill-outline-color': '#1a237e'
-            }
+        // Step 2: Define and group your 34 source layers for batch rendering
+        const polygonLayers = [
+            'PublicOpenSpace', 'Farms_Parastatal', 'Farms_DWS', 'Farms_Municipal', 
+            'Farms_StateLandinTrust', 'Farms_DPWINational', 'Farms_DPWIProvincial', 
+            'Farms_DLRRD', 'DPWIAssetRegisterFarms', 'Farmportions', 'Parentfarms', 
+            'Erven_DHS', 'Erven_Prastatal', 'Erven_DPWINational', 'Erven_DPWIProvincial', 
+            'Erven_DLRRD', 'Erven_Municipality', 'DPWIAssetRegisterErven', 'Erven', 
+            'Holdings', 'Leaseareas', 'MineralRights', 'Servitudeareas', 
+            'RegistrationDivision', 'Towns', 'LocalMunicipalities',  'Generalplans', 
+            'DistrictMunicipalities', 'MetropolitanMunicipality', 'EasternCape', 
+        ];
+
+        const lineLayers = ['Streets', 'HV Lines 20140207', 'MV Lines', 'EstablishedBoundary'];
+        const pointLayers = ['Beacon'];
+
+        // Step 3: Draw out the Polygons dynamically (Cadastrals, Farms, Boundaries)
+        polygonLayers.forEach(layerName => {
+            map.addLayer({
+                'id': layerName,
+                'type': 'fill',
+                'source': 'gisinfo',
+                'source-layer': layerName,
+                'paint': {
+                    'fill-color': layerName.includes('Farm') ? '#d7ccc8' : '#e0f2f1', // Split hue logic by dataset types
+                    'fill-opacity': 0.35,
+                    'fill-outline-color': '#37474f'
+                }
+            });
         });
 
-        // 3. Setup interactive click events for attribute tables/popups
-        map.on('click', 'Erven', (e) => {
-            const properties = e.features[0].properties;
-            
-            // Build your interactive popup HTML using your QGIS attribute columns
-            // Replace 'Plot_ID' and 'Owner' with your actual column headings
-            let popupContent = `<h3>Property Details</h3><table border="1" style="border-collapse:collapse; width:100%;">`;
-            for (const [key, value] of Object.entries(properties)) {
-                popupContent += `<tr><td style="padding:5px;"><b>${key}</b></td><td style="padding:5px;">${value}</td></tr>`;
-            }
-            popupContent += `</table>`;
-
-            new maplibregl.Popup()
-                .setLngLat(e.lngLat)
-                .setHTML(popupContent)
-                .addTo(map);
+        // Step 4: Draw out the Infrastructure and Boundary Lines
+        lineLayers.forEach(layerName => {
+            map.addLayer({
+                'id': layerName,
+                'type': 'line',
+                'source': 'gisinfo',
+                'source-layer': layerName,
+                'paint': {
+                    'line-color': layerName.includes('Lines') ? '#e53935' : '#757575', // Electrical grids appear red, streets grey
+                    'line-width': layerName.includes('HVLines') ? 2.5 : 1.2
+                }
+            });
         });
 
-        // Change cursor to a pointer when hovering over properties
-        map.on('mouseenter', 'Erven', () => { map.getCanvas().style.cursor = 'pointer'; });
-        map.on('mouseleave', 'Erven', () => { map.getCanvas().style.cursor = ''; });
+        // Step 5: Draw out the Point Beacons and Plans
+        pointLayers.forEach(layerName => {
+            map.addLayer({
+                'id': layerName,
+                'type': 'circle',
+                'source': 'gisinfo',
+                'source-layer': layerName,
+                'paint': {
+                    'circle-radius': 5,
+                    'circle-color': '#ffb300',
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#000000'
+                }
+            });
+        });
+
+        // Step 6: Interactive generic popup controller across ALL polygon parcels
+        polygonLayers.forEach(layerName => {
+            map.on('click', layerName, (e) => {
+                const properties = e.features[0].properties;
+                
+                // Loops through whatever attributes exist in that specific QGIS layer file table
+                let popupContent = `<div style="max-height:200px; overflow-y:auto;">
+                                    <h3 style="margin:5px 0;">Dataset: ${layerName.replace('_', ' ')}</h3>
+                                    <table border="1" style="border-collapse:collapse; width:100%; font-family:sans-serif; font-size:11px;">`;
+                
+                for (const [key, value] of Object.entries(properties)) {
+                    popupContent += `<tr><td style="padding:4px; background:#f5f5f5;"><b>${key}</b></td><td style="padding:4px;">${value}</td></tr>`;
+                }
+                popupContent += `</table></div>`;
+
+                new maplibregl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(popupContent)
+                    .addTo(map);
+            });
+
+            // Handlers for switching cursor pointers smoothly on interactive hover
+            map.on('mouseenter', layerName, () => { map.getCanvas().style.cursor = 'pointer'; });
+            map.on('mouseleave', layerName, () => { map.getCanvas().style.cursor = ''; });
+        });
     });
 </script>
 
