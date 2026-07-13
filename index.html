@@ -44,6 +44,17 @@
             maxzoom: 18
         });
 
+ map.on('load', () => {
+            // FIX: Uses correct jsDelivr CDN endpoint to serve your repository files with 'Access-Control-Allow-Origin: *'
+            map.addSource('gisinfo', {
+                type: 'vector',
+                tiles: [
+                    'https://jsdelivr.net{z}/{x}/{y}.pbf'
+                ],
+                minzoom: 6,
+                maxzoom: 18
+            });
+        
         // Step 2: Define and group your 34 source layers for batch rendering
         const polygonLayers = [
             'Public Open Space', 'Farms_Parastatal', 'Farms_DWS', 'Farms_Municipal', 
