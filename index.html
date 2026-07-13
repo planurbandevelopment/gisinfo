@@ -5,11 +5,11 @@
     <title>GISinfo Map</title>
     <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
     
-<!-- Load the actual MapLibre JavaScript Engine -->
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.min.js"></script>
+    <!-- Load the actual MapLibre JavaScript Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.min.js"></script>
 
-<!-- Load the actual MapLibre Layout Styling Sheet -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.min.css">
+    <!-- Load the actual MapLibre Layout Styling Sheet -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.min.css">
     
     <style>
         body { margin: 0; padding: 0; }
@@ -33,27 +33,18 @@
         zoom: 7
     });
 
+    // FIXED: Combined and cleaned up the duplicate nested map.on('load') loops
     map.on('load', () => {
-        // FIX 2: Corrected the full repository and server deployment file path
+        
+        // FIXED: Set up clean production CDN mapping to fetch files with correct CORS headers
         map.addSource('gisinfo', {
             type: 'vector',
             tiles: [
-                    'https://planurbandevelopment.github.io/gisinfo/{z}/{x}/{y}'
+                'https://jsdelivr.net{z}/{x}/{y}.pbf'
             ],
             minzoom: 6,
             maxzoom: 18
         });
-
- map.on('load', () => {
-            // FIX: Uses correct jsDelivr CDN endpoint to serve your repository files with 'Access-Control-Allow-Origin: *'
-            map.addSource('gisinfo', {
-                type: 'vector',
-                tiles: [
-                    'https://jsdelivr.net{z}/{x}/{y}.pbf'
-                ],
-                minzoom: 6,
-                maxzoom: 18
-            });
         
         // Step 2: Define and group your 34 source layers for batch rendering
         const polygonLayers = [
@@ -63,7 +54,7 @@
             'Erven_DHS', 'Erven_Prastatal', 'Erven_DPWI National', 'Erven_DPWI Provincial', 
             'Erven_DLRRD', 'Erven_Municipality', 'DPWI Asset Register Erven', 'Erven', 
             'Holdings', 'Lease areas', 'Mineral Rights', 'Servitude areas', 
-            'Registration Division', 'Towns', 'Local Municipalities',  'General plans', 
+            'Registration Division', 'Towns', 'Local Municipalities', 'General plans', 
             'District Municipalities', 'Metropolitan Municipality', 'Eastern Cape', 
         ];
 
@@ -78,7 +69,7 @@
                 'source': 'gisinfo',
                 'source-layer': layerName,
                 'paint': {
-                    'fill-color': layerName.includes('Farm') ? '#d7ccc8' : '#e0f2f1', // Split hue logic by dataset types
+                    'fill-color': layerName.includes('Farm') ? '#d7ccc8' : '#e0f2f1', 
                     'fill-opacity': 0.35,
                     'fill-outline-color': '#37474f'
                 }
@@ -93,7 +84,7 @@
                 'source': 'gisinfo',
                 'source-layer': layerName,
                 'paint': {
-                    'line-color': layerName.includes('Lines') ? '#e53935' : '#757575', // Electrical grids appear red, streets grey
+                    'line-color': layerName.includes('Lines') ? '#e53935' : '#757575', 
                     'line-width': layerName.includes('HV Lines') ? 2.5 : 1.2
                 }
             });
@@ -118,12 +109,10 @@
         // Step 6: Interactive generic popup controller across ALL polygon parcels
         polygonLayers.forEach(layerName => {
             map.on('click', layerName, (e) => {
-                // Ensure features exist to prevent undefined popup script failures
                 if (!e.features || e.features.length === 0) return;
                 
                 const properties = e.features[0].properties;
                 
-                // Loops through whatever attributes exist in that specific QGIS layer file table
                 let popupContent = `<div style="max-height:200px; overflow-y:auto;">
                                     <h3 style="margin:5px 0;">Dataset: ${layerName.replace('_', ' ')}</h3>
                                     <table border="1" style="border-collapse:collapse; width:100%; font-family:sans-serif; font-size:11px;">`;
@@ -138,10 +127,9 @@
                     .setHTML(popupContent)
                     .addTo(map);
                 
-                e.stopPropagation(); // Stop click events stacking up through layered overlapping lines
+                e.stopPropagation(); 
             });
 
-            // Handlers for switching cursor pointers smoothly on interactive hover
             map.on('mouseenter', layerName, () => { map.getCanvas().style.cursor = 'pointer'; });
             map.on('mouseleave', layerName, () => { map.getCanvas().style.cursor = ''; });
         });
